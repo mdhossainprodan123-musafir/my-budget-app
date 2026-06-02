@@ -112,20 +112,36 @@ function confirmClearAll() {
     closeModal();
 }
 
-// অ্যান্ড্রয়েডের নিজস্ব সিস্টেম ব্যবহার করে আসল পিডিএফ ডাউনলোড
+/// সম্পূর্ণ নতুন ও ১০০% কার্যকরী ডাউনলোড সিস্টেম
 function downloadPDF() {
-    // পিডিএফ করার আগে সাময়িকভাবে ডিলিট (❌) বাটনগুলো লুকিয়ে ফেলা
+    // ডিলিট (❌) বোতামগুলো সাময়িকভাবে লুকিয়ে ফেলা
     const deleteButtons = document.querySelectorAll('.delete-btn');
     deleteButtons.forEach(btn => btn.style.display = 'none');
 
-    // মাত্র ১ সেকেন্ড অপেক্ষা করে প্রিন্ট কমান্ড দেওয়া
-    setTimeout(() => {
+    // যে অংশটুকুর পিডিএফ লাগবে (printArea)
+    const element = document.getElementById('printArea');
+
+    // html2canvas ব্যবহার করে হিসাবের অংশটিকে সরাসরি ছবি (Image) বানিয়ে ডাউনলোড করা
+    if (typeof html2canvas !== 'undefined') {
+        html2canvas(element, { scale: 3, useCORS: true }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'মাসিক_হিসাব_বিবরণী.png'; // এটি সরাসরি আপনার ফোনে ইমেজ হিসেবে সেভ হবে
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            // ডাউনলোড শেষে ডিলিট বাটনগুলো আবার স্ক্রিনে ফিরিয়ে আনা
+            deleteButtons.forEach(btn => btn.style.display = 'inline-block');
+        }).catch(err => {
+            alert("ডাউনলোড ব্যর্থ হয়েছে, দয়া করে আবার চেষ্টা করুন।");
+            deleteButtons.forEach(btn => btn.style.display = 'inline-block');
+        });
+    } else {
+        // যদি কোনো কারণে লাইব্রেরি কাজ না করে, তবে ফোনের ডিফল্ট প্রিন্ট ট্রিকার করবে
         window.print();
-        
-        // প্রিন্ট উইন্ডো চলে আসার পর ডিলিট বাটনগুলো আবার স্ক্রিনে ফিরিয়ে আনা
         deleteButtons.forEach(btn => btn.style.display = 'inline-block');
-    }, 100);
+    }
 }
+
 
 
 // অ্যাপ চালু হওয়ার সময় স্ক্রিন লোড করা
