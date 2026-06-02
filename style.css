@@ -1,0 +1,17 @@
+/* কাস্টম স্টাইল এবং পিডিএফ ফরম্যাটিং */
+body {
+    -webkit-tap-highlight-color: transparent;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* পিডিএফ প্রিন্ট করার সময় এই ক্লাসটি পেজ ব্রেক বা লেআউট সুন্দর রাখতে সাহায্য করবে */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
