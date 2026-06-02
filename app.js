@@ -112,27 +112,21 @@ function confirmClearAll() {
     closeModal();
 }
 
-// প্রফেশনাল পিডিএফ জেনারেটর এবং ফোন স্টোরেজে ডাউনলোড ট্রিগার
+// অ্যান্ড্রয়েডের নিজস্ব সিস্টেম ব্যবহার করে আসল পিডিএফ ডাউনলোড
 function downloadPDF() {
-    // পিডিএফ করার আগে সাময়িকভাবে ডিলিট (❌) বাটনগুলো হাইড করা
+    // পিডিএফ করার আগে সাময়িকভাবে ডিলিট (❌) বাটনগুলো লুকিয়ে ফেলা
     const deleteButtons = document.querySelectorAll('.delete-btn');
     deleteButtons.forEach(btn => btn.style.display = 'none');
 
-    const element = document.getElementById('printArea');
-    const opt = {
-        margin:       [10, 10, 10, 10],
-        filename:     'মাসিক_খরচ_বিবরণী.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 3, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    // পিডিএফ ফাইল জেনারেট ও সরাসরি ডাউনলোড
-    html2pdf().from(element).set(opt).save().then(() => {
-        // ডাউনলোড শেষ হলে আবার ডিলিট বাটনগুলো ফিরিয়ে আনা
+    // মাত্র ১ সেকেন্ড অপেক্ষা করে প্রিন্ট কমান্ড দেওয়া
+    setTimeout(() => {
+        window.print();
+        
+        // প্রিন্ট উইন্ডো চলে আসার পর ডিলিট বাটনগুলো আবার স্ক্রিনে ফিরিয়ে আনা
         deleteButtons.forEach(btn => btn.style.display = 'inline-block');
-    });
+    }, 100);
 }
+
 
 // অ্যাপ চালু হওয়ার সময় স্ক্রিন লোড করা
 updateUI();
