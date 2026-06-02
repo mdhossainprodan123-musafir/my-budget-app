@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>মাসিক খরচ ট্র্যাকার</title>
-    <!-- Tailwind CSS UI ডিজাইনের জন্য -->
+    <title>মাসিক খরচ ট্র্যাকার - প্রো</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- অ্যাপের ভেতর পিডিএফ কাজ করানোর জন্য শক্তিশালী লাইব্রেরি -->
+    <!-- পিডিএফ জেনারেটর লাইব্রেরি -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- এক্সটার্নাল সিএসএস ফাইল লিঙ্ক -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-100 min-h-screen p-4 font-sans relative">
 
-    <!-- কাস্টম বাংলা পপ-আপ (Modal) যা কোনো ইংরেজি লেখা দেখাবে না -->
+    <!-- কাস্টম প্রফেশনাল বাংলা কনফার্মেশন পপ-আপ -->
     <div id="customModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center transform scale-95 transition-all duration-300">
             <div class="text-red-500 text-5xl mb-3">⚠️</div>
@@ -24,52 +26,63 @@
         </div>
     </div>
 
+    <!-- মেইন অ্যাপ কন্টেইনার -->
     <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden p-6 mt-4">
         
-        <!-- এই এরিয়াটুকুর পিডিএফ তৈরি হবে -->
+        <!-- এই অংশটুকুর আসল পিডিএফ ডাউনলোড হবে -->
         <div id="printArea" class="bg-white p-2">
             <h2 class="text-2xl font-bold text-center text-indigo-600 mb-6">📊 মাসিক খরচ ট্র্যাকার</h2>
 
-            <!-- ড্যাশবোর্ড -->
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-green-50 p-4 rounded-xl text-center border border-green-200">
-                    <p class="text-xs text-gray-500 font-bold">মোট বাজেট</p>
-                    <p class="text-lg font-bold text-green-600"><span id="displayBudget">0</span> ৳</p>
+            <!-- ড্যাশবোর্ড কার্ড (বাজেট, খরচ ও ব্যালেন্স) -->
+            <div class="grid grid-cols-3 gap-2 mb-6">
+                <div class="bg-green-50 p-3 rounded-xl text-center border border-green-200">
+                    <p class="text-[10px] text-gray-500 font-bold uppercase">মোট বাজেট</p>
+                    <p class="text-sm font-bold text-green-600 mt-1"><span id="displayBudget">0</span> ৳</p>
                 </div>
-                <div class="bg-red-50 p-4 rounded-xl text-center border border-red-200">
-                    <p class="text-xs text-gray-500 font-bold">অবশিষ্ট ব্যালেন্স</p>
-                    <p class="text-lg font-bold text-red-600"><span id="remainingBalance">0</span> ৳</p>
+                <div class="bg-amber-50 p-3 rounded-xl text-center border border-amber-200">
+                    <p class="text-[10px] text-gray-500 font-bold uppercase">মোট খরচ</p>
+                    <p class="text-sm font-bold text-amber-600 mt-1"><span id="displayTotalExpense">0</span> ৳</p>
+                </div>
+                <div class="bg-red-50 p-3 rounded-xl text-center border border-red-200">
+                    <p class="text-[10px] text-gray-500 font-bold uppercase">অবশিষ্ট</p>
+                    <p class="text-sm font-bold text-red-600 mt-1"><span id="remainingBalance">0</span> ৳</p>
                 </div>
             </div>
 
-            <!-- খরচের তালিকা -->
-            <div>
+            <!-- খরচের লাইভ তালিকা বিবরণী -->
+            <div class="pdf-page-break">
                 <h3 class="text-md font-bold text-gray-800 mb-3 flex justify-between items-center">
                     <span>📋 খরচের বিবরণী</span>
                     <span id="currentDate" class="text-xs text-gray-400"></span>
                 </h3>
-                <div class="border rounded-xl divide-y bg-white" id="expenseList">
+                <div class="border rounded-xl divide-y bg-white overflow-hidden" id="expenseList">
                     <p class="text-gray-400 text-center py-4 text-sm">এখনো কোনো খরচ লেখা হয়নি।</p>
+                </div>
+
+                <!-- লাইভ মোট খরচের ফুটার (যা পিডিএফেও সুন্দরভাবে আসবে) -->
+                <div id="totalExpenseFooter" class="mt-3 bg-gray-50 p-3 rounded-xl border flex justify-between items-center hidden">
+                    <span class="text-sm font-bold text-gray-700">সর্বমোট খরচফল:</span>
+                    <span class="text-lg font-black text-red-600"><span id="footerTotalAmount">0</span> ৳</span>
                 </div>
             </div>
         </div>
 
-        <!-- বাজেট ও খরচ ইনপুট করার ফর্ম (যা পিডিএফে আসবে না) -->
+        <!-- ইনপুট সেকশন (যা পিডিএফে আসবে না) -->
         <div class="mt-6 space-y-4">
-            <!-- বাজেট সেট -->
+            <!-- বাজেট যোগ করার ঘর -->
             <div class="bg-indigo-50 p-4 rounded-xl">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">এই মাসের মোট বাজেট:</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">বাজেট টাকা যোগ করুন:</label>
                 <div class="flex gap-2">
-                    <input type="number" id="monthlyBudget" placeholder="টাকার পরিমাণ লিখুন" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                    <button onclick="setBudget()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">সেট</button>
+                    <input type="number" id="monthlyBudget" placeholder="টাকার পরিমাণ" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <button onclick="addBudget()" class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">যোগ</button>
                 </div>
             </div>
 
-            <!-- খরচ যোগ -->
+            <!-- নতুন খরচ এন্ট্রি -->
             <div class="bg-gray-50 p-4 rounded-xl">
                 <p class="text-sm font-semibold text-gray-700 mb-3">নতুন খরচ যোগ করুন:</p>
                 <div class="flex flex-col gap-2">
-                    <input type="text" id="expenseReason" placeholder="কোথায় খরচ করলেন? (যেমন: বাজার)" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                    <input type="text" id="expenseReason" placeholder="কোথায় খরচ করলেন?" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
                     <div class="flex gap-2">
                         <input type="number" id="expenseAmount" placeholder="টাকার পরিমাণ" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
                         <button onclick="addExpense()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-green-700 transition w-1/3">যোগ করুন</button>
@@ -78,120 +91,14 @@
             </div>
         </div>
 
-        <!-- অ্যাকশন বোতামসমূহ -->
+        <!-- কন্ট্রোল বাটন সমূহ -->
         <div class="grid grid-cols-2 gap-3 mt-6">
             <button onclick="downloadPDF()" class="bg-blue-600 text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-700 transition shadow-md">📄 পিডিএফ ডাউনলোড</button>
             <button onclick="clearAll()" class="bg-gray-200 text-gray-700 py-2.5 rounded-lg font-semibold text-sm hover:bg-gray-300 transition">🔄 সব মুছুন</button>
         </div>
     </div>
 
-    <script>
-        let budget = parseFloat(localStorage.getItem('budget')) || 0;
-        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
-
-        const options = { year: 'numeric', month: 'long' };
-        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('bn-BD', options);
-
-        function updateUI() {
-            document.getElementById('displayBudget').innerText = budget;
-            
-            let totalExpense = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-            let remaining = budget - totalExpense;
-            document.getElementById('remainingBalance').innerText = remaining;
-
-            const listContainer = document.getElementById('expenseList');
-            if (expenses.length === 0) {
-                listContainer.innerHTML = '<p class="text-gray-400 text-center py-4 text-sm">এখনো কোনো খরচ লেখা হয়নি।</p>';
-                return;
-            }
-
-            listContainer.innerHTML = expenses.map((exp, index) => `
-                <div class="flex justify-between items-center p-3 text-sm">
-                    <div>
-                        <p class="font-semibold text-gray-800">${exp.reason}</p>
-                        <p class="text-xs text-gray-400">${exp.date}</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-red-500">-${exp.amount} ৳</span>
-                        <button onclick="deleteExpense(${index})" class="text-gray-400 hover:text-red-600 text-xs delete-btn">❌</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function setBudget() {
-            const budgetInput = document.getElementById('monthlyBudget').value;
-            if(!budgetInput || budgetInput <= 0) return alert('দয়া করে সঠিক টাকার পরিমাণ লিখুন');
-            budget = parseFloat(budgetInput);
-            localStorage.setItem('budget', budget);
-            document.getElementById('monthlyBudget').value = '';
-            updateUI();
-        }
-
-        function addExpense() {
-            const reason = document.getElementById('expenseReason').value;
-            const amount = parseFloat(document.getElementById('expenseAmount').value);
-            
-            if(!reason || !amount || amount <= 0) return alert('দয়া করে খরচের খাত এবং সঠিক টাকার পরিমাণ লিখুন');
-
-            const newExpense = {
-                reason: reason,
-                amount: amount,
-                date: new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' })
-            };
-
-            expenses.push(newExpense);
-            localStorage.setItem('expenses', JSON.stringify(expenses));
-            
-            document.getElementById('expenseReason').value = '';
-            document.getElementById('expenseAmount').value = '';
-            updateUI();
-        }
-
-        function deleteExpense(index) {
-            expenses.splice(index, 1);
-            localStorage.setItem('expenses', JSON.stringify(expenses));
-            updateUI();
-        }
-
-        // কাস্টম পপ-আপ দেখানোর ফাংশন
-        function clearAll() {
-            document.getElementById('customModal').classList.remove('hidden');
-        }
-
-        // পপ-আপ বন্ধ করার ফাংশন
-        function closeModal() {
-            document.getElementById('customModal').classList.add('hidden');
-        }
-
-        // কাস্টম পপ-আপ থেকে নিশ্চিত করলে ডাটা মোছার ফাংশন
-        function confirmClearAll() {
-            localStorage.clear();
-            budget = 0;
-            expenses = [];
-            updateUI();
-            closeModal();
-        }
-
-        function downloadPDF() {
-            const deleteButtons = document.querySelectorAll('.delete-btn');
-            deleteButtons.forEach(btn => btn.style.display = 'none');
-
-            const element = document.getElementById('printArea');
-            const opt = {
-                margin:       [10, 10, 10, 10],
-                filename:     'মাসিক_খরচ_বিবরণী.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 3, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().from(element).set(opt).save().then(() => {
-                deleteButtons.forEach(btn => btn.style.display = 'inline-block');
-            });
-        }
-
-        updateUI();
-    </script>
+    <!-- মূল জাভাস্ক্রিপ্ট ফাইল লিঙ্ক -->
+    <script src="app.js"></script>
 </body>
 </html>
