@@ -9,9 +9,21 @@ input[type="number"]::-webkit-outer-spin-button {
     margin: 0;
 }
 
-/* পিডিএফ প্রিন্ট করার সময় এই ক্লাসটি পেজ ব্রেক বা লেআউট সুন্দর রাখতে সাহায্য করবে */
+/* পিডিএফ প্রিন্ট করার সময় শুধু হিসাবের অংশটুকু থাকবে, বাকি ইনপুট ও বাটন গায়েব হয়ে যাবে */
 @media print {
-    .no-print {
+    body {
+        background-color: #ffffff !important;
+        padding: 0 !important;
+    }
+    /* মেইন কন্টেইনারের শ্যাডো ও মার্জিন রিমুভ করা */
+    div.max-w-md {
+        box-shadow: none !important;
+        margin-top: 0 !important;
+        padding: 0 !important;
+        max-w: 100% !important;
+    }
+    /* বাজেট ইনপুট ফর্ম, খরচের ইনপুট ফর্ম এবং নিচের বাটনগুলো পিডিএফে আসবে না */
+    .bg-indigo-50, .bg-gray-50, .grid-cols-2 {
         display: none !important;
     }
 }
