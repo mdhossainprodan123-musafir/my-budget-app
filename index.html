@@ -4,40 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>মাসিক খরচ ট্র্যাকার</title>
+    <!-- Tailwind CSS UI ডিজাইনের জন্য -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style>
-        /* প্রিন্ট করার সময় অপ্রয়োজনীয় বাটন এবং ইনপুট বক্স লুকিয়ে ফেলার জন্য */
-        @media print {
-            body {
-                background: white !important;
-                padding: 0 !important;
-            }
-            .no-print {
-                display: none !important;
-            }
-            .print-container {
-                box-shadow: none !important;
-                margin: 0 !important;
-                max-w: 100% !important;
-                width: 100% !important;
-            }
-        }
-    </style>
+    <!-- অ্যাপের ভেতর পিডিএফ কাজ করানোর জন্য শক্তিশালী লাইব্রেরি -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 font-sans">
+<body class="bg-gray-100 min-h-screen p-4 font-sans relative">
 
-    <div class="print-container max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden p-6 mt-4">
-        <h2 class="text-2xl font-bold text-center text-indigo-600 mb-6">📊 মাসিক খরচ ট্র্যাকার</h2>
-
-        <div class="bg-indigo-50 p-4 rounded-xl mb-6 no-print">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">এই মাসের মোট বাজেট:</label>
-            <div class="flex gap-2">
-                <input type="number" id="monthlyBudget" placeholder="টাকার পরিমাণ লিখুন" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <button onclick="setBudget()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">সেট</button>
+    <!-- কাস্টম বাংলা পপ-আপ (Modal) যা কোনো ইংরেজি লেখা দেখাবে না -->
+    <div id="customModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center transform scale-95 transition-all duration-300">
+            <div class="text-red-500 text-5xl mb-3">⚠️</div>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">আপনি কি নিশ্চিত?</h3>
+            <p class="text-sm text-gray-500 mb-6">সব ডাটা মুছে ফেললে তা আর ফিরে পাওয়া যাবে না।</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-lg font-semibold text-sm hover:bg-gray-300 transition w-1/2">না, থাক</button>
+                <button onclick="confirmClearAll()" class="bg-red-600 text-white px-5 py-2 rounded-lg font-semibold text-sm hover:bg-red-700 transition shadow-md w-1/2">হ্যাঁ, মুছুন</button>
             </div>
         </div>
+    </div>
 
-        <div id="pdfContent">
+    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden p-6 mt-4">
+        
+        <!-- এই এরিয়াটুকুর পিডিএফ তৈরি হবে -->
+        <div id="printArea" class="bg-white p-2">
+            <h2 class="text-2xl font-bold text-center text-indigo-600 mb-6">📊 মাসিক খরচ ট্র্যাকার</h2>
+
+            <!-- ড্যাশবোর্ড -->
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="bg-green-50 p-4 rounded-xl text-center border border-green-200">
                     <p class="text-xs text-gray-500 font-bold">মোট বাজেট</p>
@@ -49,17 +42,7 @@
                 </div>
             </div>
 
-            <div class="bg-gray-50 p-4 rounded-xl mb-6 no-print">
-                <p class="text-sm font-semibold text-gray-700 mb-3">নতুন খরচ যোগ করুন:</p>
-                <div class="flex flex-col gap-2">
-                    <input type="text" id="expenseReason" placeholder="কোথায় খরচ করলেন? (যেমন: বাজার)" class="w-full px-3 py-2 border rounded-lg text-sm">
-                    <div class="flex gap-2">
-                        <input type="number" id="expenseAmount" placeholder="টাকার পরিমাণ" class="w-full px-3 py-2 border rounded-lg text-sm">
-                        <button onclick="addExpense()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-green-700 transition w-1/3">যোগ করুন</button>
-                    </div>
-                </div>
-            </div>
-
+            <!-- খরচের তালিকা -->
             <div>
                 <h3 class="text-md font-bold text-gray-800 mb-3 flex justify-between items-center">
                     <span>📋 খরচের বিবরণী</span>
@@ -71,7 +54,32 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 mt-6 no-print">
+        <!-- বাজেট ও খরচ ইনপুট করার ফর্ম (যা পিডিএফে আসবে না) -->
+        <div class="mt-6 space-y-4">
+            <!-- বাজেট সেট -->
+            <div class="bg-indigo-50 p-4 rounded-xl">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">এই মাসের মোট বাজেট:</label>
+                <div class="flex gap-2">
+                    <input type="number" id="monthlyBudget" placeholder="টাকার পরিমাণ লিখুন" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <button onclick="setBudget()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">সেট</button>
+                </div>
+            </div>
+
+            <!-- খরচ যোগ -->
+            <div class="bg-gray-50 p-4 rounded-xl">
+                <p class="text-sm font-semibold text-gray-700 mb-3">নতুন খরচ যোগ করুন:</p>
+                <div class="flex flex-col gap-2">
+                    <input type="text" id="expenseReason" placeholder="কোথায় খরচ করলেন? (যেমন: বাজার)" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                    <div class="flex gap-2">
+                        <input type="number" id="expenseAmount" placeholder="টাকার পরিমাণ" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                        <button onclick="addExpense()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-green-700 transition w-1/3">যোগ করুন</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- অ্যাকশন বোতামসমূহ -->
+        <div class="grid grid-cols-2 gap-3 mt-6">
             <button onclick="downloadPDF()" class="bg-blue-600 text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-700 transition shadow-md">📄 পিডিএফ ডাউনলোড</button>
             <button onclick="clearAll()" class="bg-gray-200 text-gray-700 py-2.5 rounded-lg font-semibold text-sm hover:bg-gray-300 transition">🔄 সব মুছুন</button>
         </div>
@@ -81,7 +89,6 @@
         let budget = parseFloat(localStorage.getItem('budget')) || 0;
         let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
 
-        // বর্তমান মাস ও বছর প্রদর্শন
         const options = { year: 'numeric', month: 'long' };
         document.getElementById('currentDate').innerText = new Date().toLocaleDateString('bn-BD', options);
 
@@ -106,7 +113,7 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="font-bold text-red-500">-${exp.amount} ৳</span>
-                        <button onclick="deleteExpense(${index})" class="text-gray-400 hover:text-red-600 text-xs no-print">❌</button>
+                        <button onclick="deleteExpense(${index})" class="text-gray-400 hover:text-red-600 text-xs delete-btn">❌</button>
                     </div>
                 </div>
             `).join('');
@@ -147,21 +154,43 @@
             updateUI();
         }
 
+        // কাস্টম পপ-আপ দেখানোর ফাংশন
         function clearAll() {
-            if(confirm('আপনি কি নিশ্চিত যে সব ডাটা মুছে ফেলতে চান?')) {
-                localStorage.clear();
-                budget = 0;
-                expenses = [];
-                updateUI();
-            }
+            document.getElementById('customModal').classList.remove('hidden');
+        }
+
+        // পপ-আপ বন্ধ করার ফাংশন
+        function closeModal() {
+            document.getElementById('customModal').classList.add('hidden');
+        }
+
+        // কাস্টম পপ-আপ থেকে নিশ্চিত করলে ডাটা মোছার ফাংশন
+        function confirmClearAll() {
+            localStorage.clear();
+            budget = 0;
+            expenses = [];
+            updateUI();
+            closeModal();
         }
 
         function downloadPDF() {
-            // মোবাইল ও ডেক্সটপে সরাসরি পিডিএফ সেভ করার জন্য ব্রাউজার প্রিন্ট ট্রিগার
-            window.print();
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            deleteButtons.forEach(btn => btn.style.display = 'none');
+
+            const element = document.getElementById('printArea');
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     'মাসিক_খরচ_বিবরণী.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 3, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(element).set(opt).save().then(() => {
+                deleteButtons.forEach(btn => btn.style.display = 'inline-block');
+            });
         }
 
-        // অ্যাপ চালু হলে ডাটা লোড হবে
         updateUI();
     </script>
 </body>
